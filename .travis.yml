@@ -6,6 +6,6 @@ install:
 - pip3 install ansible-lint molecule[lint] 
 - pip3 install molecule[docker]
 script:
-- ansible-lint playbook.yml -x 703 -v
+- ansible-lint all.yml -x 703 -v
 - cd apach
 - molecule test
