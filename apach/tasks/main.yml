@@ -1,0 +1,84 @@
+---
+# tasks file for apach
+- name: install packages
+  apt:
+      name: "{{ item }}"
+      state: present
+  loop:
+    - "certbot"
+    - "apache2"
+    - "ssl-cert"
+    - "python-certbot-apache"
+
+- name: enabled modules
+  apache2_module:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - "proxy"
+    - "proxy_http"
+    - "reqtimeout"
+  notify: restart httpd
+
+- name: disabled modules
+  apache2_module:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - "proxy"
+    - "proxy_http"
+    - "reqtimeout"
+    - "headers"
+    - "rewrite"
+    - "ssl"
+  notify: restart httpd
+- name: create dirs for for default site
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - /usr/local/apache
+    - /var/www/html/pass
+- name: create auth file for default site
+  copy:
+    dest: /usr/local/apache/restricted
+    src: blanco
+- name: change default site
+  blockinfile:
+    block: |
+      <Directory "/var/www/html/pass">
+      AuthType Basic
+      AuthName "Restricted Files"
+      Require valid-user
+      AuthUserFile "/usr/local/apache/restricted"
+      </Directory>
+    insertbefore: VirtualHost
+    path: /etc/apache2/sites-enabled/000-default.conf
+  notify: restart httpd
+- name: change documentroot
+  lineinfile:
+    path: /etc/apache2/sites-enabled/000-default.conf
+    line: DocumentRoot /var/www/html/pass
+    regexp: DocumentRoot
+    state: present
+  notify: restart httpd
+- name: change http response to Prod
+  lineinfile:
+    path: /etc/apache2/conf-enabled/security.conf
+    regexp: ^ServerTokens
+    line: ServerTokens Prod
+  notify: restart httpd
+- name: change serversignature to off
+  lineinfile:
+    path: /etc/apache2/conf-enabled/security.conf
+    line: ServerSignature Off
+    regexp: ^ServerSignature
+    state: present
+  notify: restart httpd
+- name: change trace
+  lineinfile:
+    path: /etc/apache2/conf-enabled/security.conf
+    line: TraceEnable Off
+    regexp: ^TraceEnable
+    state: present
+  notify: restart httpd
