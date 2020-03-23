@@ -1,0 +1,124 @@
+---
+# tasks file for prepdock
+- name: "check apt recommended packages setup"
+  command: "apt-config dump APT::Install-Recommends"
+  register: apt_recommends
+  changed_when: false
+  check_mode: false
+
+- name: "check apt suggests"
+  command: "apt-config dump APT::Install-Suggests"
+  register: apt_suggests
+  changed_when: false
+  check_mode: false
+
+- name: "check apt autoupdate"
+  command: "apt-config dump APT::Periodic"
+  register: apt_autoup
+  changed_when: false
+  check_mode: false
+
+- name: "create custom apt config file"
+  copy:
+      src: blanco
+      dest: /etc/apt/apt.conf.d/71aptcustomized
+      mode: 0644
+      owner: root
+      group: root
+      force: no
+
+
+- name: "generate custom apt config to disable suggested packages"
+  lineinfile:
+      dest: /etc/apt/apt.conf.d/71aptcustomized
+      line: "APT::Install-Suggests \"0\";"
+      state: present
+      owner: root
+      group: root
+      mode: 0644
+      create: true
+  when:
+       - apt_suggests.stdout is match(".*true.*") or apt_suggests.stdout is match(".*1.*")
+
+- name: "generate custom apt config to disable recommended packages"
+  lineinfile:
+      dest: /etc/apt/apt.conf.d/71aptcustomized
+      line: "APT::Install-Recommends \"0\";"
+      state: present
+      owner: root
+      group: root
+      mode: 0644
+      create: true
+  when:
+       - apt_recommends.stdout is match(".*true.*") or apt_recommends.stdout is match(".*1.*")
+
+- name: create apt config file for automatic updates
+  copy:
+      src: blanco
+      dest: /etc/apt/apt.conf.d/20unattended-upgrades
+      mode: 0644
+      owner: root
+      group: root
+      force: no
+
+- name: "generate custom apt config to update package list periodically"
+  lineinfile:
+      dest: /etc/apt/apt.conf.d/20unattended-upgrades
+      line: "APT::Periodic::Update-Package-Lists \"1\";"
+      state: present
+      owner: root
+      group: root
+      mode: 0644
+      create: true
+
+- name: "generate custom apt config to upgrade packages automatically"
+  lineinfile:
+      dest: /etc/apt/apt.conf.d/20unattended-upgrades
+      line: "APT::Periodic::Unattended-Upgrade \"1\";"
+      state: present
+      owner: root
+      group: root
+      mode: 0644
+      create: true
+
+
+- name: "install some packages"
+  apt:
+      name: "{{ item }}"
+      state: present
+  loop:
+    - "software-properties-common"
+    - "lvm2"
+
+- name: "enable additional components on debian"
+  command: "/usr/bin/add-apt-repository {{ item }}"
+  register: apt_non_free
+  changed_when: apt_non_free.stdout is match(".*distribution component enabled for all sources.*")
+  loop:
+    - "contrib"
+    - "non-free"
+
+- name: "update package cache"
+  apt:
+      update_cache: yes
+  when: apt_non_free is changed
+
+- name: "install some more packages"
+  apt:
+      name: "{{ item }}"
+      state: present
+  loop:
+    - "firmware-misc-nonfree"
+    - "intel-microcode"
+    - "spectre-meltdown-checker"
+    - "needrestart"
+    - "software-properties-common"
+    - "unattended-upgrades"
+    - "vim"
+
+- name: "check spectre-meltdown vulnerability status"
+  command: "spectre-meltdown-checker --batch json"
+  register: spectre_output
+  changed_when: false
+  when:
+      - ansible_virtualization_type != "virtualbox" and "amazon" not in ansible_product_version and ansible_virtualization_type != "docker"

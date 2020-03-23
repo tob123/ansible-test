@@ -1,0 +1,21 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+platforms:
+  - name: instance
+    image: tob123/debian-molecule
+    pre_build_image: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    groups:
+      - debianbuster
+provisioner:
+  name: ansible
+  inventory:
+    group_vars:
+      debianbuster:
+        ansible_python_interpreter: /usr/bin/python3
+verifier:
+  name: ansible

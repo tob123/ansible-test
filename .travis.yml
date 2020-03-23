@@ -2,10 +2,14 @@ sudo: required
 language: python
 services:
   - docker
+env:
+  matrix:
+  - ANS_ROLE=generic
+  - ANS_ROLE=apach
 install:
 - pip3 install ansible-lint molecule[lint] 
 - pip3 install molecule[docker]
 script:
 - ansible-lint all.yml -x 703 -v
-- cd apach
+- cd ${ANS_ROLE}
 - molecule test
