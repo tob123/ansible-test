@@ -1,7 +1,9 @@
 sudo: required
 language: python
+services:
+  - docker
 install:
-- pip install ansible-lint molecule molecule[docker]
+- pip3 install ansible-lint molecule[lint] molecule[docker]
 script:
 - ansible-lint playbook.yml -x 703 -v
 - cd apach
