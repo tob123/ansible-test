@@ -3,7 +3,8 @@ language: python
 services:
   - docker
 install:
-- pip3 install ansible-lint molecule[lint] molecule[docker]
+- pip3 install ansible-lint molecule[lint] 
+- pip3 install molecule[docker]
 script:
 - ansible-lint playbook.yml -x 703 -v
 - cd apach
