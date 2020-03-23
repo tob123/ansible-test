@@ -1,0 +1,10 @@
+- name: test all playbooks
+  hosts: all
+  become: yes
+  roles:
+          #    - generic
+    - apach
+#   - dock
+#    - mail
+#    - ssh
+#    - storage

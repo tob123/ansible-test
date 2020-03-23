@@ -1,0 +1,8 @@
+sudo: required
+language: python
+install:
+- pip install ansible-lint molecule molecule[docker]
+script:
+- ansible-lint playbook.yml -x 703 -v
+- cd apach
+- molecule test
