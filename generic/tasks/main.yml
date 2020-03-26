@@ -27,7 +27,6 @@
       group: root
       force: no
 
-
 - name: "generate custom apt config to disable suggested packages"
   lineinfile:
       dest: /etc/apt/apt.conf.d/71aptcustomized
@@ -81,7 +80,6 @@
       mode: 0644
       create: true
 
-
 - name: "install some packages"
   apt:
       name: "{{ item }}"
@@ -115,6 +113,18 @@
     - "software-properties-common"
     - "unattended-upgrades"
     - "vim"
+    - "sudo"
+
+- name: Include json file containing system admins
+  include_vars: "{{ lookup('first_found', possible_files) }}"
+  vars:
+    possible_files:
+      - vars/systemadmins.json
+      - vars/systemadmins_default.json
+#  include_vars:
+#    file: systemadmins.json
+
+- include_tasks: system-admins.yml
 
 - name: "check spectre-meltdown vulnerability status"
   command: "spectre-meltdown-checker --batch json"
